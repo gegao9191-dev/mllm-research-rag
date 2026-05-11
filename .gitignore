@@ -216,3 +216,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+.gradio/
+.idea/
+*.pyc
+data/papers/*.pdf

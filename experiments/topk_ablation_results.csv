@@ -1,0 +1,539 @@
+﻿question_id,question,expected_paper,chunk_size,chunk_overlap,top_k,num_nodes,retrieved_files,retrieved_pages,answer,retrieved_sources_preview,answer_quality_score,faithfulness_score,failure_type,notes
+Q1,ViT 为什么可以把图像当成词序列来处理？请结合 patch embedding、position embedding、class token 和 Transformer Encoder 解释。,VIT.pdf,800,120,2,388,VIT.pdf; VIT.pdf,3; 9,"ViT 将图像当作词序列来处理，核心在于把 2D 图像转换成 1D 的 token 序列，具体通过以下四个组件实现：
+
+1. **Patch Embedding（图块嵌入）**  
+   图像原本是 `H×W×C` 的三维张量，ViT 将其切分成固定大小的 2D 图块（patch），每个图块大小为 `P×P×C`，共得到 `N = HW/P²` 个图块。随后，每个图块被展平为一维向量，再通过一个可训练的线性投影映射到固定的 `D` 维向量。这一步相当于为每个图块生成一个“词向量”，从而将图像转化为 `N` 个 token 的序列，使图像在形式上与 NLP 中的词序列一致。
+
+2. **Position Embedding（位置嵌入）**  
+   由于 Transformer 本身不具备序列顺序的感知能力，ViT 为每个图块嵌入加上可学习的 1D 位置嵌入，以保留图块在原始图像中的空间位置信息。这样，即使图像被切分成序列，模型仍能知道每个图块来自图像的哪个位置。
+
+3. **Class Token（分类标记）**  
+   类似 BERT 的 `[class]` token，ViT 在序列最前面添加一个额外的可学习嵌入（`z00 = xclass`）。这个 token 本身不携带任何图像内容，但经过 Transformer 编码器处理后，其输出状态 `z0L` 会聚合整个序列的信息，作为整幅图像的表示，用于最终的分类任务。
+
+4. **Transformer Encoder（Transformer 编码器）**  
+   由 patch embedding、position embedding 和 class token 拼接而成的完整序列，被送入标准的 Transformer 编码器。编码器由交替的多头自注意力（MSA）和 MLP 块堆叠而成，并在每个块前后使用 LayerNorm 和残差连接。通过自注意力机制，模型能够捕捉不同图块之间的全局关系，就像处理词序列一样处理图像。
+
+综上，ViT 通过“切分图块 → 线性投影为 token → 添加位置信息 → 前置分类 token → 送入 Transformer”的流程，将图像完全转化为一个 1D 的 token 序列，从而可以像处理词序列一样用 Transformer 进行建模。","Source 1: VIT.pdf, page 3, score=0.6129627552386296
+Published as a conference paper at ICLR 2021                                 Vision Transformer (ViT)                          Transformer Encoder                  Class                                                                              L x   +                    Bird     MLP                       Ball                     Car        Head                                       MLP                                     ...                                                                     
+
+Source 2: VIT.pdf, page 9, score=0.5948460680229734
+Published as a conference paper at ICLR 2021               RGB embedding filters           (first 28 principal components)                                                              Position embedding similarity                          ViT-L/16                                                                                         1                                                         1                                                                                                         ",5,5,none,检索来源集中在 VIT.pdf，回答完整覆盖 patch embedding、position embedding、class token 与 Transformer Encoder。
+Q2,CLIP 的 contrastive pre-training objective 是什么？请解释 image-text pairs、cosine similarity 和 symmetric cross entropy loss 的作用。,CLIP.pdf,800,120,2,388,CLIP.pdf; CLIP.pdf,44; 4,"根据当前检索到的论文片段，可以部分回答你的问题。
+
+**CLIP 的 contrastive pre-training objective**  
+片段中提到：“Given a batch of N (image, text) pairs, CLIP is trained to predict which of the N × N possible (image, text) pairings across a batch actually occurred.”  
+即，给定一个包含 N 个（图像，文本）对的批次，CLIP 的训练目标是预测这 N×N 种可能的（图像，文本）配对中，哪些是真实匹配的配对。这本质上是一个对比学习任务，让模型学会将匹配的图像和文本拉近，将不匹配的拉远。
+
+**关于 image-text pairs、cosine similarity 和 symmetric cross entropy loss 的作用**  
+- **image-text pairs**：片段中明确提到了使用（图像，文本）对进行训练，但未进一步解释其具体作用机制。  
+- **cosine similarity**：在提供的片段中完全没有出现“cosine similarity”这一术语，因此无法基于片段说明其作用。  
+- **symmetric cross entropy loss**：片段中同样未提及该损失函数，因此无法基于片段说明其作用。
+
+综上，根据当前检索到的论文片段，只能确定 CLIP 的对比预训练目标是预测批次中真实的（图像，文本）配对，而 cosine similarity 和 symmetric cross entropy loss 的具体作用在片段中未出现，**根据当前检索到的论文片段无法确定**。","Source 1: CLIP.pdf, page 44, score=0.60354912809709
+This mirrors recent work which reportedtask. We trained the model with a total batch size of 1,712                                                                 positive results using the same contrastive pre-training ob-for approximately 30 million images sampled from our pre- training dataset. At the end of training it achieves nearly     jective on the relatively different domain of medical imaging                                                       (Zhang et al., 2020). It also is simila
+
+Source 2: CLIP.pdf, page 4, score=0.5850901773478039
+(2020b). encoder, learns to recognize ImageNet classes three times                                        We instead use only a linear projection to map from each en- slower than a much simpler baseline that predicts a bag-of-                                                              coder’s representation to the multi-modal embedding space. words encoding of the same text.                                        We did not notice a difference in training efﬁciency between Both these approache",3,5,retrieval_incomplete + answer_incomplete,检索到 CLIP 训练目标核心段落，但未召回 cosine similarity 与 symmetric cross entropy 的完整实现细节；模型选择保守回答，忠实性较高。
+Q3,LLaVA 的 visual instruction tuning data 是如何由 GPT-4 生成的？请分别解释 conversation、detailed description 和 complex reasoning 三类数据。,llava.pdf,800,120,2,388,llava.pdf; llava.pdf,3; 1,"根据检索到的 LLaVA 论文片段，其 visual instruction tuning data 的生成方式如下：
+
+**整体生成思路**  
+LLaVA 利用仅接受文本输入的 GPT-4（或 ChatGPT）作为“教师”，通过**符号表示**将图像信息转化为语言模型可识别的序列。具体使用两类符号：  
+- **Captions**：从不同角度描述视觉场景；  
+- **Bounding boxes**：定位场景中的物体，编码物体类别和空间位置。  
+基于 COCO 图像，为每种数据类型先人工设计少量示例作为种子，再通过上下文学习（in-context-learning）提示 GPT-4 批量生成。
+
+**Conversation 数据**  
+设计一段助手与提问者关于照片的对话。回答的语气需模拟助手正在观看图像并作答。问题涵盖多样的视觉内容，包括物体类型、计数、物体动作、物体位置、物体间的相对位置等，且只考虑有明确答案的问题。
+
+**Detailed description 数据**  
+为生成丰富且全面的图像描述，先创建一系列具有该意图的问题，然后提示 GPT-4 并整理出问题列表（详细提示见附录）。本质上是通过问答形式引导出详尽的描述。
+
+**Complex reasoning 数据**  
+根据当前检索到的论文片段无法确定。片段中仅明确列出了 Conversation 和 Detailed description 两种类型，未出现 complex reasoning 的相关描述。","Source 1: llava.pdf, page 3, score=0.6094362751172385
+Table 1: One example to illustrate the instruction-following data. The top block shows the contexts such as captions and boxes used to prompt GPT, and the bottom block shows the three types of responses. Note that the visual image is not used to prompt GPT, we only show it here as a reference.   following data, the available amount is limited, partially because the process for creating such data is time-consuming and less well-defined when human crowd-scouring is considered. Inspired by the succ
+
+Source 2: llava.pdf, page 1, score=0.6047659928931697
+Visual Instruction Tuning                                      Haotian Liu1∗, Chunyuan Li2∗, Qingyang Wu3, Yong Jae Lee1                               1University of Wisconsin–Madison   2Microsoft Research   3Columbia University                                                                    https://llava-vl.github.io                                                    Abstract2023                                  Instruction tuning large language models (LLMs) using machine-generated         ",4,5,answer_incomplete,检索到 LLaVA 的 GPT-4 数据生成方法，并解释 conversation 与 detailed description；但 complex reasoning 细节未召回，答案不完整。
+Q4,在 Video-LLaVA 中，为什么作者认为 image features 和 video features 必须在 projection layer 之前对齐？请结合 unified visual representation 和 LanguageBind 解释。,video-llava.pdf,800,120,2,388,video-llava.pdf; video-llava.pdf,4; 9,"根据检索到的论文片段，作者认为 image features 和 video features 必须在 projection layer 之前对齐，原因如下：
+
+片段指出，通过共享一个语言特征空间，图像和视频的表示最终会汇聚成一个统一的视觉特征空间，这被称为图像和视频的“涌现对齐”（emergent alignment）。因此，Video-LLaVA 的视频编码器和图像编码器都从 LanguageBind 编码器库中初始化，这样可以在输入 LLM 之前就预先对齐（pre-aligning）视觉信号，并缩小不同视觉信号表示之间的差距。这种在投影层之前就形成的统一视觉表示（unified visual representation），随后才通过一个共享的投影层送入 LLM。简而言之，利用 LanguageBind 将视觉信号预先绑定到语言特征空间，是为了在投影之前就实现对齐，从而让 LLM 能够基于统一的视觉表示同时理解图像和视频。","Source 1: video-llava.pdf, page 4, score=0.6183131969010138
+By shar-   visual comprehension tasks, rather than just de- ing a language feature space, the image and video    scribing visual signals. Note that the conversation representations ultimately converge into a unified    data X1q, X1a, · · · , XNq , XNa   consists of multiple visual feature space, which we refer to as emergent    rounds. alignment of images and videos. Therefore, our video encoder and image encoder are initialized          X1q,                      r = 1                           
+
+Source 2: video-llava.pdf, page 9, score=0.6133155959227488
+pare with Video-LLaVA∗to assess the performance   while preserving data features. This would support gains from joint image training on video bench-   Video-LLaVA in better understanding long videos. marks.  In Table 6, we evaluate our model on    Besides, Video-LLaVA can serve as a baseline to four video question-answering datasets.  Com-   extend to additional visual-related modalities, such pared to Video-LLaVA∗without image in training,   as depth and infrared images.  Additionally, we the m",4,5,retrieval_incomplete,检索到 Video-LLaVA 的核心对齐思想，回答基本正确；但对 “misalignment before projection” 的问题动机解释还不够完整。
+Q5,Qwen2.5-VL 的动态分辨率、动态 FPS 和绝对时间编码分别解决了什么问题？,qwen2.5-VL.pdf,800,120,2,388,qwen2.5-VL.pdf; qwen2.5-VL.pdf,7; 5,"根据检索到的论文片段，Qwen2.5-VL 的动态分辨率、动态 FPS 和绝对时间编码分别解决了以下问题：
+
+- **动态分辨率（Native Dynamic Resolution）**  
+  在空间维度上，动态地将不同尺寸的图像转换为对应长度的 token 序列，并直接使用图像的实际尺寸来表示边界框、点等空间特征。这解决了传统方法因归一化坐标而丢失尺度信息的问题，使模型能够内在地学习尺度信息，从而更好地泛化到不同分辨率的图像输入。
+
+- **动态 FPS（Dynamic Frame Rate Training）**  
+  在训练时动态采样视频的帧率（FPS），使训练数据中的 FPS 分布更均匀，同时让模型适应可变的帧率。这解决了模型对视频帧率变化不够鲁棒的问题，使其能够更有效地捕捉视频内容的时间动态。
+
+- **绝对时间编码（MRoPE Aligned to Absolute Time）**  
+  将多模态旋转位置编码（MRoPE）的时间分量与绝对时间对齐，通过时间 ID 之间的间隔来反映真实的时间流逝。这解决了 Qwen2-VL 中时间位置 ID 仅与输入帧数挂钩、无法考虑内容变化速度或事件绝对时间的问题，使模型能够学习跨不同 FPS 采样率的一致时间对齐，从而理解视频中的时间节奏。","Source 1: qwen2.5-VL.pdf, page 7, score=0.5213299953520111
+Video Data  To ensure enhanced robustness in understanding video data with varying frames per second (FPS), we dynamically sampled FPS during training to achieve a more evenly distributed representation of FPS within the training dataset. Additionally, for videos exceeding half an hour in length, we specifically constructed a set of long video captions by synthesizing multi-frame captions through a targeted synthesis pipeline. Regarding video grounding data, we formulated timestamps in both seco
+
+Source 2: qwen2.5-VL.pdf, page 5, score=0.5204961707966581
+training. Images are randomly sampled according to their original aspect ratios, enabling the model to generalize effectively to inputs of diverse resolutions. This approach not only improves the model’s adaptability but also ensures stable and efficient training across different sizes of visual data.  2.1.2  Native Dynamic Resolution and Frame Rate  Qwen2.5-VL introduces advancements in both spatial and temporal dimensions to handle diverse multimodal inputs effectively.  In the spatial domain,",5,5,none,检索来源集中在 qwen2.5-VL.pdf，三项机制均解释清楚。
+Q6,InternVL3.5 的 DvD（Decoupled Vision-Language Deployment）是什么？它如何把 vision encoder 和 language model 部署到不同 GPU 上来提升推理效率？,internvl.pdf,800,120,2,388,internvl.pdf; CLIP.pdf,4; 5,根据当前检索到的论文片段无法确定。提供的片段仅包含 InternVL3.5 系列的模型参数表以及 InternVL3.5-Flash 的视觉 token 压缩机制，未提及 DvD（Decoupled Vision-Language Deployment）或如何将 vision encoder 和 language model 部署到不同 GPU 的相关内容。,"Source 1: internvl.pdf, page 4, score=0.6270043568691966
+#Param     Model                    Vision Encoder   Language Model                                                                      Vision   Language            Total                                             Dense Models       InternVL3.5-1B           InternViT-300M   Qwen3-0.6B           0.3B        0.8B            1.1B      InternVL3.5-2B           InternViT-300M   Qwen3-1.7B           0.3B        2.0B            2.3B      InternVL3.5-4B           InternViT-300M  Qwen3-4B            0.
+
+Source 2: CLIP.pdf, page 5, score=0.6225508645773381
+We denote this is left as future work.                                           this model as ViT-L/14@336px. Unless otherwise speciﬁed,                                                                            all results reported in this paper as “CLIP” use this model While previous computer vision research has often scaled                                                    which we found to perform best. models by increasing the width (Mahajan et al., 2018) or depth (He et al., 2016a) in is",1,5,retrieval_failure,top_k=2 未召回 DvD 的部署细节，只检索到 InternVL 参数表/Flash 机制和无关 CLIP 片段；模型拒答是忠实的。
+Q1,ViT 为什么可以把图像当成词序列来处理？请结合 patch embedding、position embedding、class token 和 Transformer Encoder 解释。,VIT.pdf,800,120,4,388,VIT.pdf; VIT.pdf; VIT.pdf; VIT.pdf,3; 9; 4; 2,"ViT 之所以能把图像当成词序列来处理，是因为它通过以下设计将 2D 图像转化为 1D 的 token 序列，并交给原本为文本设计的 Transformer 编码器：
+
+1. **Patch Embedding（图块嵌入）**  
+   标准 Transformer 的输入是 1D 的 token 嵌入序列。为了适配图像，ViT 将图像切分成固定大小的 2D 图块（patch），然后把每个图块展平成一维向量，再通过一个可训练的线性投影映射到固定的维度 D。这样，每个图块就变成了一个“词向量”（patch embedding），整张图像就变成了一串 patch embedding 序列，序列长度 N 等于图块的数量。
+
+2. **Position Embedding（位置嵌入）**  
+   与文本中的词序类似，图块之间的空间位置关系也需要被模型感知。ViT 在 patch embedding 上加上可学习的 1D 位置嵌入，从而为每个图块赋予位置信息。值得注意的是，这些位置嵌入在初始化时并不包含 2D 空间先验，所有空间关系都需要在训练中从头学习。
+
+3. **Class Token（分类标记）**  
+   类似于 BERT 的 [class] token，ViT 在 patch embedding 序列的最前面添加一个额外的可学习嵌入（class token）。这个 token 本身不携带任何图像内容信息，但经过 Transformer 编码器处理后，其输出状态会被用作整张图像的表示，并连接分类头进行类别预测。这使得模型能够像处理文本分类任务中的 [CLS] token 一样，聚合全图信息。
+
+4. **Transformer Encoder（Transformer 编码器）**  
+   由 patch embedding、class token 和 position embedding 拼接而成的完整序列，直接输入到标准的 Transformer 编码器中。编码器由交替的多头自注意力（MSA）和 MLP 块堆叠而成，自注意力机制是全局的，能够捕捉任意两个图块之间的关系，就像处理词序列时捕捉词与词之间的依赖一样。
+
+综上，ViT 通过“切图块→线性投影成 patch embedding→加位置 embedding→前置 class token→送入 Transformer 编码器”这一流程，将图像完全转化为一个 1D 的 token 序列，从而可以像处理词序列一样用 Transformer 进行建模。","Source 1: VIT.pdf, page 3, score=0.6129627552386296
+Published as a conference paper at ICLR 2021                                 Vision Transformer (ViT)                          Transformer Encoder                  Class                                                                              L x   +                    Bird     MLP                       Ball                     Car        Head                                       MLP                                     ...                                                                     
+
+Source 2: VIT.pdf, page 9, score=0.5948460680229734
+Published as a conference paper at ICLR 2021               RGB embedding filters           (first 28 principal components)                                                              Position embedding similarity                          ViT-L/16                                                                                         1                                                         1                                                                                                         
+
+Source 3: VIT.pdf, page 4, score=0.5885293358173604
+Published as a conference paper at ICLR 2021      The MLP contains two layers with a GELU non-linearity.      z0 = [xclass; x1pE; x2pE; · · · ; xNp E] + Epos,   E ∈R(P 2·C)×D, Epos ∈R(N+1)×D     (1)      z′ ℓ= MSA(LN(zℓ−1)) + zℓ−1,          ℓ= 1 . . . L                                (2)    zℓ= MLP(LN(z′ ℓ)) + z′ ℓ,            ℓ= 1 . . . L                                (3)     y = LN(z0L)                                                                                (4)  Inductive bias.  We not
+
+Source 4: VIT.pdf, page 2, score=0.5879727499385975
+This model is very similar to ViT, but our work goes further to demonstrate that large scale pre-training makes vanilla transformers competitive with (or even better than) state-of-the-art CNNs. Moreover, Cordonnier et al. (2020) use a small patch size of 2 × 2 pixels, which makes the model applicable only to small-resolution images, while we handle medium-resolution images as well.  There has also been a lot of interest in combining convolutional neural networks (CNNs) with forms of self-attent",5,5,none,VIT.pdf 来源完整，回答结构清晰且覆盖所有关键组件。
+Q2,CLIP 的 contrastive pre-training objective 是什么？请解释 image-text pairs、cosine similarity 和 symmetric cross entropy loss 的作用。,CLIP.pdf,800,120,4,388,CLIP.pdf; CLIP.pdf; CLIP.pdf; CLIP.pdf,44; 4; 4; 1,"根据检索到的论文片段，CLIP 的对比预训练目标可以概括为：给定一个包含 N 个（图像，文本）对的批次，模型需要预测这 N×N 个可能的（图像，文本）配对中，哪些是真实匹配的配对。
+
+具体来说，CLIP 联合训练一个图像编码器和一个文本编码器，将图像和文本映射到同一个多模态嵌入空间。在该空间中，对于批次内的 N 个真实（图像，文本）对，模型会最大化它们的图像嵌入与文本嵌入之间的**余弦相似度**；同时，对于其余 N²−N 个错误配对，则最小化其嵌入之间的余弦相似度。在这些相似度分数上，CLIP 优化一个**对称交叉熵损失**（symmetric cross entropy loss）。
+
+因此，各要素的作用为：
+- **image-text pairs**：构成训练批次的正样本对，模型需要拉近真实配对的嵌入，推远错误配对的嵌入。
+- **cosine similarity**：用于衡量图像嵌入与文本嵌入在多模态空间中的对齐程度，是优化目标的核心度量。
+- **symmetric cross entropy loss**：在相似度矩阵上计算的对称损失，驱动模型正确区分真实配对与错误配对，实现对比学习。","Source 1: CLIP.pdf, page 44, score=0.60354912809709
+This mirrors recent work which reportedtask. We trained the model with a total batch size of 1,712                                                                 positive results using the same contrastive pre-training ob-for approximately 30 million images sampled from our pre- training dataset. At the end of training it achieves nearly     jective on the relatively different domain of medical imaging                                                       (Zhang et al., 2020). It also is simila
+
+Source 2: CLIP.pdf, page 4, score=0.5850901773478039
+(2020b). encoder, learns to recognize ImageNet classes three times                                        We instead use only a linear projection to map from each en- slower than a much simpler baseline that predicts a bag-of-                                                              coder’s representation to the multi-modal embedding space. words encoding of the same text.                                        We did not notice a difference in training efﬁciency between Both these approache
+
+Source 3: CLIP.pdf, page 4, score=0.5845140356951546
+Learning Transferable Visual Models From Natural Language Supervision                                       4  balance the results by including up to 20,000 (image, text)    multi-modal embedding space by jointly training an image pairs per query. The resulting dataset has a similar total    encoder and text encoder to maximize the cosine similar- word count as the WebText dataset used to train GPT-2. We     ity of the image and text embeddings of the N real pairs refer to this dataset as WIT fo
+
+Source 4: CLIP.pdf, page 1, score=0.5815456779993735
+content based image retrieval by training a model to pre-             The model transfers non-trivially to most tasks                                                                                 dict the nouns and adjectives in text documents paired with              and is often competitive with a fully supervised                                                                   images. Quattoni et al. (2007) demonstrated it was possi-                baseline without the need for any dataset",5,5,none,CLIP.pdf 关键段落被完整召回，回答覆盖 image-text pairs、cosine similarity 与 symmetric cross entropy loss。
+Q3,LLaVA 的 visual instruction tuning data 是如何由 GPT-4 生成的？请分别解释 conversation、detailed description 和 complex reasoning 三类数据。,llava.pdf,800,120,4,388,llava.pdf; llava.pdf; internvl.pdf; llava.pdf,3; 1; 7; 6,"根据检索到的论文片段，LLaVA 的 visual instruction tuning data 生成方式如下：
+
+- **生成方式**：利用仅接受文本输入的 GPT-4 或 ChatGPT 作为强教师，通过符号表示将图像编码为语言模型可识别的序列。具体使用两种符号表示：**图像描述（Captions）** 从不同角度描述视觉场景，**边界框（Bounding boxes）** 定位物体并编码其概念和空间位置。基于 COCO 图像，通过人工设计少量示例作为上下文学习的种子，提示 GPT-4 生成三类指令遵循数据。
+
+对于三类数据，片段中明确描述了其中两类：
+
+- **Conversation（对话）**：设计一段助手与提问者关于照片的对话。回答的语气如同助手正在看着图像并回答问题。问题涵盖视觉内容的多个方面，包括物体类型、计数、物体动作、物体位置、物体间相对位置等，且只考虑有明确答案的问题。
+
+- **Detailed description（详细描述）**：为了生成丰富且全面的图像描述，先创建一系列具有此意图的问题，然后提示 GPT-4 并整理出问题列表（具体提示见附录，片段未展示完整细节）。
+
+- **Complex reasoning（复杂推理）**：片段中未提及该类型数据的生成方式或具体描述。根据当前检索到的论文片段无法确定。","Source 1: llava.pdf, page 3, score=0.6094362751172385
+Table 1: One example to illustrate the instruction-following data. The top block shows the contexts such as captions and boxes used to prompt GPT, and the bottom block shows the three types of responses. Note that the visual image is not used to prompt GPT, we only show it here as a reference.   following data, the available amount is limited, partially because the process for creating such data is time-consuming and less well-defined when human crowd-scouring is considered. Inspired by the succ
+
+Source 2: llava.pdf, page 1, score=0.6047659928931697
+Visual Instruction Tuning                                      Haotian Liu1∗, Chunyuan Li2∗, Qingyang Wu3, Yong Jae Lee1                               1University of Wisconsin–Madison   2Microsoft Research   3Columbia University                                                                    https://llava-vl.github.io                                                    Abstract2023                                  Instruction tuning large language models (LLMs) using machine-generated         
+
+Source 3: internvl.pdf, page 7, score=0.5986747961042415
+Data. For the supervised fine-tuning (SFT) stage, the datasets comprise approximately 56 million samples, which corresponds to around 130 billion tokens. The proportion of text-only data to multimodal data is roughly 1:3.5. For the cascade reinforcement learning stage, we use MMPR-v1.2 [142] as the training data for offline RL, which contains about 200K sample pairs. Based on MMPR-v1.2, we compute the accuracy of each query using the provided rollouts and select those whose model accuracy falls 
+
+Source 4: llava.pdf, page 6, score=0.5974663081371353
+Surprisingly, although LLaVA is trained with a small multimodal instruction-following dataset (∼80K unique images), it demonstrates quite similar reasoning results with multimodal GPT-4 on these examples. Note that while these images are out-of-domain for LLaVA, LLaVA is still able to understand the scenes and follow the question instruction to provide a reasonable response. In contrast, BLIP-2 and OpenFlamingo focus on describing the image, instead of following the user instruction to answer in",3,4,answer_incomplete + mixed_sources_noise,检索到 LLaVA 数据生成相关片段，但混入 InternVL；回答仍缺少 complex reasoning 的生成细节。
+Q4,在 Video-LLaVA 中，为什么作者认为 image features 和 video features 必须在 projection layer 之前对齐？请结合 unified visual representation 和 LanguageBind 解释。,video-llava.pdf,800,120,4,388,video-llava.pdf; video-llava.pdf; video-llava.pdf; video-llava.pdf,4; 9; 9; 3,"在 Video-LLaVA 中，作者认为图像特征和视频特征必须在 projection layer 之前对齐，核心原因是为了让大语言模型（LLM）能够从**统一的视觉表示（unified visual representation）** 中学习，而 LanguageBind 编码器正是实现这一目标的关键。
+
+根据论文片段（第4页），作者指出：通过共享一个语言特征空间，图像和视频的表示最终会汇聚到一个统一的视觉特征空间，这被称为“涌现对齐”（emergent alignment）。因此，Video-LLaVA 的视频编码器和图像编码器都从 **LanguageBind 编码器库** 初始化。LanguageBind 的作用是预先将不同的视觉信号（图像、视频）绑定到同一个语言特征空间中，从而在进入共享投影层之前，就已经**预先对齐了 LLM 的输入，并缩小了不同视觉信号表示之间的差距**。随后，这个已经对齐的统一视觉表示再通过一个共享的投影层送入 LLM。
+
+简而言之，在投影层之前利用 LanguageBind 进行对齐，可以确保图像和视频特征在进入 LLM 之前就已经处于一个统一的特征空间，避免了因模态差异导致的表示错位，使得 LLM 能够更有效地同时理解图像和视频内容。","Source 1: video-llava.pdf, page 4, score=0.6183131969010138
+By shar-   visual comprehension tasks, rather than just de- ing a language feature space, the image and video    scribing visual signals. Note that the conversation representations ultimately converge into a unified    data X1q, X1a, · · · , XNq , XNa   consists of multiple visual feature space, which we refer to as emergent    rounds. alignment of images and videos. Therefore, our video encoder and image encoder are initialized          X1q,                      r = 1                           
+
+Source 2: video-llava.pdf, page 9, score=0.6133155959227488
+pare with Video-LLaVA∗to assess the performance   while preserving data features. This would support gains from joint image training on video bench-   Video-LLaVA in better understanding long videos. marks.  In Table 6, we evaluate our model on    Besides, Video-LLaVA can serve as a baseline to four video question-answering datasets.  Com-   extend to additional visual-related modalities, such pared to Video-LLaVA∗without image in training,   as depth and infrared images.  Additionally, we the m
+
+Source 3: video-llava.pdf, page 9, score=0.6096798946643831
+As a uni-                                                           fied visual training framework, the performance of 5  Limitation and Future Directions                                            Video-LLaVA even surpasses that of expert models 5.1  Limitation                                 designed specifically for images or videos.  While Video-LLaVA exhibits strong competitive-  Acknowledgments ness in both images and videos, we still observed                                               
+
+Source 4: video-llava.pdf, page 3, score=0.5930423121087587
+Table 1: Comparison between different Large Vision-Language Models. For methods that treat LLMs as scheduler, they do not require pre-alignment and joint training.         Methods                      Image  Video  Pre-aligned  Joint training        LLMs as scheduler        VisualChatGPT (Wu et al., 2023)    ✔     ✗             -                  -       HuggingGPT (Shen et al., 2023)    ✔     ✗             -                  -      MM-REACT (Yang et al., 2023)    ✔   ✔            -             ",5,5,none,Video-LLaVA 相关来源集中，回答能解释 LanguageBind、unified visual representation 与 projection 前对齐。
+Q5,Qwen2.5-VL 的动态分辨率、动态 FPS 和绝对时间编码分别解决了什么问题？,qwen2.5-VL.pdf,800,120,4,388,qwen2.5-VL.pdf; qwen2.5-VL.pdf; qwen2.5-VL.pdf; qwen2.5-VL.pdf,7; 5; 3; 1,"根据检索到的论文片段，Qwen2.5-VL 的动态分辨率、动态 FPS 和绝对时间编码分别解决了以下问题：
+
+- **动态分辨率**：解决了传统方法对图像坐标进行归一化而导致模型无法学习尺度信息的问题。通过直接使用输入图像的实际尺寸来表示边界框、点等空间特征，模型能够固有地学习尺度信息，从而提升对不同分辨率图像的处理能力。
+
+- **动态 FPS**：解决了视频数据中帧率（FPS）变化带来的理解鲁棒性问题。通过在训练中动态采样 FPS，使训练数据集中的 FPS 分布更加均匀，模型能够更好地捕捉视频内容的时间动态。
+
+- **绝对时间编码**：解决了 Qwen2-VL 中时间位置 ID 仅与输入帧数相关，无法反映内容变化速度和事件绝对时间的问题。通过将 MRoPE 的时间维度与绝对时间对齐，模型能够通过时间 ID 之间的间隔理解时间节奏，并在不同 FPS 采样率下实现一致的时间对齐，且无需额外计算开销。","Source 1: qwen2.5-VL.pdf, page 7, score=0.5213299953520111
+Video Data  To ensure enhanced robustness in understanding video data with varying frames per second (FPS), we dynamically sampled FPS during training to achieve a more evenly distributed representation of FPS within the training dataset. Additionally, for videos exceeding half an hour in length, we specifically constructed a set of long video captions by synthesizing multi-frame captions through a targeted synthesis pipeline. Regarding video grounding data, we formulated timestamps in both seco
+
+Source 2: qwen2.5-VL.pdf, page 5, score=0.5204961707966581
+training. Images are randomly sampled according to their original aspect ratios, enabling the model to generalize effectively to inputs of diverse resolutions. This approach not only improves the model’s adaptability but also ensures stable and efficient training across different sizes of visual data.  2.1.2  Native Dynamic Resolution and Frame Rate  Qwen2.5-VL introduces advancements in both spatial and temporal dimensions to handle diverse multimodal inputs effectively.  In the spatial domain,
+
+Source 3: qwen2.5-VL.pdf, page 3, score=0.5157742738697106
+Figure 1: The Qwen2.5-VL framework demonstrates the integration of a vision encoder and a language model decoder to process multimodal inputs, including images and videos. The vision encoder is designed to handle inputs at their native resolution and supports dynamic FPS sampling. Images of varying sizes and video frames with different FPS rates are dynamically mapped to token sequences of varying lengths. Notably, MRoPE aligns time IDs with absolute time along the temporal dimension, enabling t
+
+Source 4: qwen2.5-VL.pdf, page 1, score=0.501811188373714
+March 5, 2025                          Qwen2.5-VL Technical Report                                   Qwen Team, Alibaba Group                                           https://chat.qwenlm.ai                                          https://huggingface.co/Qwen                                          https://modelscope.cn/organization/qwen                                          https://github.com/QwenLM/Qwen2.5-VL                                                Abstract                We introdu",5,5,none,Qwen2.5-VL 相关来源集中，动态分辨率、动态 FPS、绝对时间编码解释完整。
+Q6,InternVL3.5 的 DvD（Decoupled Vision-Language Deployment）是什么？它如何把 vision encoder 和 language model 部署到不同 GPU 上来提升推理效率？,internvl.pdf,800,120,4,388,internvl.pdf; CLIP.pdf; internvl.pdf; qwen2.5-VL.pdf,4; 5; 7; 4,"根据检索到的论文片段，InternVL3.5 的 DvD（Decoupled Vision-Language Deployment）是一种**将视觉处理和语言处理分离部署**的方案。其核心思路是：视觉编码器（ViT、MLP，以及 InternVL3.5-Flash 中的 ViR）部署在**视觉服务器**上，语言模型部署在**语言服务器**上。视觉子系统负责批量处理图像，生成紧凑的特征嵌入，然后将这些嵌入传输给语言子系统；语言子系统将视觉嵌入与文本上下文融合后，再进行自回归解码。通过这种分离，可以**避免视觉和语言模型在推理时相互阻塞**，使多模态预填充（prefilling）阶段的性能更接近纯语言模型，从而提升整体推理效率。
+
+片段中并未明确说明视觉服务器和语言服务器是否对应不同的 GPU，但根据“分离部署”以及“视觉服务器”“语言服务器”的表述，可以理解为它们被部署到不同的计算资源（例如不同 GPU 或服务器）上，以实现解耦和并行优化。","Source 1: internvl.pdf, page 4, score=0.6270043568691966
+#Param     Model                    Vision Encoder   Language Model                                                                      Vision   Language            Total                                             Dense Models       InternVL3.5-1B           InternViT-300M   Qwen3-0.6B           0.3B        0.8B            1.1B      InternVL3.5-2B           InternViT-300M   Qwen3-1.7B           0.3B        2.0B            2.3B      InternVL3.5-4B           InternViT-300M  Qwen3-4B            0.
+
+Source 2: CLIP.pdf, page 5, score=0.6225508645773381
+We denote this is left as future work.                                           this model as ViT-L/14@336px. Unless otherwise speciﬁed,                                                                            all results reported in this paper as “CLIP” use this model While previous computer vision research has often scaled                                                    which we found to perform best. models by increasing the width (Mahajan et al., 2018) or depth (He et al., 2016a) in is
+
+Source 3: internvl.pdf, page 7, score=0.6002821914208412
+2.5  Infrastructure  Training Framework. The model training is conducted mainly based on the XTuner framework [21], which incorporates a series of optimization strategies tailored for LLM and MoE training. These include fully shared data parallelism (FSDP) [182] to partition model parameters across GPUs, data packing [13] to reduce padding tokens while balancing the token computation load across ranks for improved training efficiency, FP8 training based on DeepGEMM [68] and liger-kernel’s fused 
+
+Source 4: qwen2.5-VL.pdf, page 4, score=0.5972981734155635
+2.1.1  Fast and Efficient Vision Encoder  The vision encoder plays a pivotal role in multimodal large language models (MLLMs). To address the challenges posed by computational load imbalances during training and inference due to native resolution inputs, we have redesigned the Vision Transformer (ViT) architecture. A key issue arises from the quadratic computational complexity associated with processing images of varying sizes. To mitigate this, we introduce windowed attention in most layers, wh",4,4,mixed_sources_noise,召回了 InternVL DvD 相关内容，但混入 CLIP/Qwen 来源；关于不同 GPU 的表述带有轻微推断，需保守处理。
+Q1,ViT 为什么可以把图像当成词序列来处理？请结合 patch embedding、position embedding、class token 和 Transformer Encoder 解释。,VIT.pdf,800,120,6,388,VIT.pdf; VIT.pdf; VIT.pdf; VIT.pdf; VIT.pdf; VIT.pdf,3; 9; 4; 2; 4; 1,"ViT 把图像当成词序列来处理，核心在于将 2D 图像转换为 1D 的嵌入向量序列，使其能够直接输入到为标准序列设计的 Transformer 编码器中。具体通过以下四个组件实现：
+
+1. **Patch Embedding（图块嵌入）**  
+   图像首先被切分成固定大小的 2D 图块（patches），每个图块类似于 NLP 中的一个“词”。然后将每个图块展平为一维向量，再通过一个可训练的线性投影映射到固定的维度 D，得到“图块嵌入”（patch embeddings）。这样，整幅图像就变成了一个图块嵌入的序列，序列长度 N 等于图块的数量（N = HW/P²），这与文本中的 token 序列形式完全一致。
+
+2. **Position Embedding（位置嵌入）**  
+   为了保留图块在原始图像中的空间位置信息，ViT 为每个图块嵌入添加可学习的 1D 位置嵌入。这与 Transformer 在 NLP 中为词嵌入添加位置编码的做法相同。论文指出，这些位置嵌入在初始化时不携带任何 2D 位置信息，所有空间关系都需要从数据中学习，进一步强化了“像词序列一样处理”的思路。
+
+3. **Class Token（分类标记）**  
+   类似于 BERT 的 `[class]` 标记，ViT 在图块嵌入序列的最前面添加一个额外的可学习嵌入（class token）。这个标记本身不对应任何图像内容，但经过 Transformer 编码器处理后，其最终输出状态会被用作整幅图像的表示，并连接分类头进行类别预测。这使得整个序列的处理方式与 NLP 中利用特殊标记汇总序列信息的方法完全对齐。
+
+4. **Transformer Encoder（Transformer 编码器）**  
+   由“图块嵌入 + 位置嵌入 + class token”构成的 1D 向量序列，被直接送入标准的 Transformer 编码器。编码器由交替的多头自注意力和 MLP 块组成，自注意力层是全局的，能够像处理词序列一样捕捉所有图块之间的关系。论文强调，这种设计刻意遵循了原始 NLP Transformer 的架构，几乎没有引入图像特有的归纳偏置，从而实现了“把图像当成词序列来处理”。
+
+综上，ViT 通过将图像切割为图块并线性投影为嵌入，加上位置嵌入和 class token，构造出一个与文本 token 序列形式相同的 1D 序列，再交由标准 Transformer 编码器处理，这就是它能够把图像当成词序列来处理的原因。","Source 1: VIT.pdf, page 3, score=0.6129627552386296
+Published as a conference paper at ICLR 2021                                 Vision Transformer (ViT)                          Transformer Encoder                  Class                                                                              L x   +                    Bird     MLP                       Ball                     Car        Head                                       MLP                                     ...                                                                     
+
+Source 2: VIT.pdf, page 9, score=0.5948460680229734
+Published as a conference paper at ICLR 2021               RGB embedding filters           (first 28 principal components)                                                              Position embedding similarity                          ViT-L/16                                                                                         1                                                         1                                                                                                         
+
+Source 3: VIT.pdf, page 4, score=0.5885293358173604
+Published as a conference paper at ICLR 2021      The MLP contains two layers with a GELU non-linearity.      z0 = [xclass; x1pE; x2pE; · · · ; xNp E] + Epos,   E ∈R(P 2·C)×D, Epos ∈R(N+1)×D     (1)      z′ ℓ= MSA(LN(zℓ−1)) + zℓ−1,          ℓ= 1 . . . L                                (2)    zℓ= MLP(LN(z′ ℓ)) + z′ ℓ,            ℓ= 1 . . . L                                (3)     y = LN(z0L)                                                                                (4)  Inductive bias.  We not
+
+Source 4: VIT.pdf, page 2, score=0.5879727499385975
+This model is very similar to ViT, but our work goes further to demonstrate that large scale pre-training makes vanilla transformers competitive with (or even better than) state-of-the-art CNNs. Moreover, Cordonnier et al. (2020) use a small patch size of 2 × 2 pixels, which makes the model applicable only to small-resolution images, while we handle medium-resolution images as well.  There has also been a lot of interest in combining convolutional neural networks (CNNs) with forms of self-attent
+
+Source 5: VIT.pdf, page 4, score=0.584582476120255
+We therefore perform 2D interpolation of the pre-trained position embeddings, according to their location in the original image. Note that this resolution adjustment and patch extraction are the only points at which an inductive bias about the 2D structure of the images is manually injected into the Vision Transformer.  4  EXPERIMENTS  We evaluate the representation learning capabilities of ResNet, Vision Transformer (ViT), and the hybrid. To understand the data requirements of each model, we pr
+
+Source 6: VIT.pdf, page 1, score=0.5781963316156045
+Published as a conference paper at ICLR 2021           AN IMAGE IS WORTH 16X16 WORDS:           TRANSFORMERS FOR IMAGE RECOGNITION AT SCALE                              Alexey Dosovitskiy∗,†, Lucas Beyer∗, Alexander Kolesnikov∗, Dirk Weissenborn∗,                            Xiaohua Zhai∗, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer,                                 Georg Heigold, Sylvain Gelly, Jakob Uszkoreit, Neil Houlsby∗,†                                                 ∗equal tec",5,5,none,VIT.pdf 来源充分，回答完整且稳定。
+Q2,CLIP 的 contrastive pre-training objective 是什么？请解释 image-text pairs、cosine similarity 和 symmetric cross entropy loss 的作用。,CLIP.pdf,800,120,6,388,CLIP.pdf; CLIP.pdf; CLIP.pdf; CLIP.pdf; CLIP.pdf; CLIP.pdf,44; 4; 4; 1; 5; 2,"根据检索到的 CLIP 论文片段，其对比预训练目标（contrastive pre-training objective）可以概括为：**在一个 batch 的 N 个 (image, text) 对中，让模型预测出哪 N 个配对是真实存在的，而不是其他 N²−N 个错误配对**。具体实现是通过联合训练图像编码器和文本编码器，将图像和文本映射到同一个多模态嵌入空间，然后在该空间中优化一个对称交叉熵损失。
+
+各组成部分的作用如下：
+
+- **Image-text pairs**：作为训练数据，每个 batch 包含 N 个真实的（图像，文本）配对。模型需要学会将每个图像与其对应的文本匹配起来，同时区分同一 batch 内其他图像与文本的错误组合。
+- **Cosine similarity**：用于衡量图像嵌入和文本嵌入之间的相似程度。在实现中，先将图像和文本的编码表示分别通过线性投影映射到多模态嵌入空间，并做 L2 归一化，然后计算它们缩放后的点积（即 cosine similarity 乘以一个可学习的温度参数）。训练目标是**最大化** N 个真实配对的余弦相似度，同时**最小化** N²−N 个错误配对的余弦相似度。
+- **Symmetric cross entropy loss**：基于上述相似度分数计算损失。具体做法是，将相似度矩阵看作 logits，分别按图像到文本和文本到图像两个方向计算交叉熵损失（即对每一行和每一列都做分类，正确标签为对角线上的配对），最后将两个方向的损失取平均。这种对称设计使得模型在图像侧和文本侧都受到监督，从而学习到对齐良好的多模态表示。","Source 1: CLIP.pdf, page 44, score=0.60354912809709
+This mirrors recent work which reportedtask. We trained the model with a total batch size of 1,712                                                                 positive results using the same contrastive pre-training ob-for approximately 30 million images sampled from our pre- training dataset. At the end of training it achieves nearly     jective on the relatively different domain of medical imaging                                                       (Zhang et al., 2020). It also is simila
+
+Source 2: CLIP.pdf, page 4, score=0.5850901773478039
+(2020b). encoder, learns to recognize ImageNet classes three times                                        We instead use only a linear projection to map from each en- slower than a much simpler baseline that predicts a bag-of-                                                              coder’s representation to the multi-modal embedding space. words encoding of the same text.                                        We did not notice a difference in training efﬁciency between Both these approache
+
+Source 3: CLIP.pdf, page 4, score=0.5845140356951546
+Learning Transferable Visual Models From Natural Language Supervision                                       4  balance the results by including up to 20,000 (image, text)    multi-modal embedding space by jointly training an image pairs per query. The resulting dataset has a similar total    encoder and text encoder to maximize the cosine similar- word count as the WebText dataset used to train GPT-2. We     ity of the image and text embeddings of the N real pairs refer to this dataset as WIT fo
+
+Source 4: CLIP.pdf, page 1, score=0.5815456779993735
+content based image retrieval by training a model to pre-             The model transfers non-trivially to most tasks                                                                                 dict the nouns and adjectives in text documents paired with              and is often competitive with a fully supervised                                                                   images. Quattoni et al. (2007) demonstrated it was possi-                baseline without the need for any dataset
+
+Source 5: CLIP.pdf, page 5, score=0.5733443218248396
+Learning Transferable Visual Models From Natural Language Supervision                                       5  # image_encoder - ResNet or Vision Transformer                                                    one dimension of the model. While Tan & Le (2019) tune # text_encoder  - CBOW or Text Transformer # I[n, h, w, c] - minibatch of aligned images           the ratio of compute allocated to each dimension for their # T[n, l]       - minibatch of aligned texts           EfﬁcientNet architectur
+
+Source 6: CLIP.pdf, page 2, score=0.5727019584870165
+age representations from text.                                    A crucial difference between these weakly supervised mod- While exciting as proofs of concept, using natural language     els and recent explorations of learning image representations supervision for image representation learning is still rare.    directly from natural language is scale. While Mahajan et al. This is likely because demonstrated performance on com-    (2018) and Kolesnikov et al. (2019) trained their models for mon ",5,5,none,CLIP.pdf 来源充分，回答比 top_k=2 更完整，能解释 loss 方向和相似度矩阵。
+Q3,LLaVA 的 visual instruction tuning data 是如何由 GPT-4 生成的？请分别解释 conversation、detailed description 和 complex reasoning 三类数据。,llava.pdf,800,120,6,388,llava.pdf; llava.pdf; internvl.pdf; llava.pdf; llava.pdf; llava.pdf,3; 1; 7; 6; 5; 7,"根据检索到的论文片段，LLaVA 的 visual instruction tuning data 生成方式如下：
+
+LLaVA 使用仅接受文本输入的 GPT-4 或 ChatGPT 作为强教师，通过两种符号表示将图像编码为 LLM 可识别的序列：**（i）描述视觉场景的标题（Captions）；（ii）定位场景中物体的边界框（Bounding boxes）**。基于 COCO 图像，他们生成了三类指令遵循数据。对于每一类，首先手动设计少量示例作为种子示例，用于上下文学习以查询 GPT-4。
+
+三类数据的具体解释如下：
+
+- **Conversation（对话）**：设计一段助手与提问者之间关于照片的对话。回答的语气如同助手正在看着图像并回答问题。提出的问题涉及图像的视觉内容，包括物体类型、物体计数、物体动作、物体位置、物体间的相对位置等。只考虑有明确答案的问题。
+- **Detailed description（详细描述）**：为了包含对图像的丰富且全面的描述，创建了一系列具有此意图的问题。通过提示 GPT-4 并整理问题列表来生成。
+- **Complex reasoning（复杂推理）**：根据当前检索到的论文片段无法确定。片段中仅提到了“conversation”和“detailed description”两类数据的具体生成方式，未提供“complex reasoning”类别的定义或生成细节。","Source 1: llava.pdf, page 3, score=0.6094362751172385
+Table 1: One example to illustrate the instruction-following data. The top block shows the contexts such as captions and boxes used to prompt GPT, and the bottom block shows the three types of responses. Note that the visual image is not used to prompt GPT, we only show it here as a reference.   following data, the available amount is limited, partially because the process for creating such data is time-consuming and less well-defined when human crowd-scouring is considered. Inspired by the succ
+
+Source 2: llava.pdf, page 1, score=0.6047659928931697
+Visual Instruction Tuning                                      Haotian Liu1∗, Chunyuan Li2∗, Qingyang Wu3, Yong Jae Lee1                               1University of Wisconsin–Madison   2Microsoft Research   3Columbia University                                                                    https://llava-vl.github.io                                                    Abstract2023                                  Instruction tuning large language models (LLMs) using machine-generated         
+
+Source 3: internvl.pdf, page 7, score=0.5986747961042415
+Data. For the supervised fine-tuning (SFT) stage, the datasets comprise approximately 56 million samples, which corresponds to around 130 billion tokens. The proportion of text-only data to multimodal data is roughly 1:3.5. For the cascade reinforcement learning stage, we use MMPR-v1.2 [142] as the training data for offline RL, which contains about 200K sample pairs. Based on MMPR-v1.2, we compute the accuracy of each query using the provided rollouts and select those whose model accuracy falls 
+
+Source 4: llava.pdf, page 6, score=0.5974663081371353
+Surprisingly, although LLaVA is trained with a small multimodal instruction-following dataset (∼80K unique images), it demonstrates quite similar reasoning results with multimodal GPT-4 on these examples. Note that while these images are out-of-domain for LLaVA, LLaVA is still able to understand the scenes and follow the question instruction to provide a reasonable response. In contrast, BLIP-2 and OpenFlamingo focus on describing the image, instead of following the user instruction to answer in
+
+Source 5: llava.pdf, page 5, score=0.595058309651289
+Each question is provided a context in the form of natural language or an image.     The assistant provides the reasoning process in natural language and selects the answer among      multiple choices. For training in (2), we organize the data as a single turn conversation, the      question & context as Xinstruct, and reasoning & answer as Xa.  5  Experiments  We assess the performance of LLaVA in instruction-following and visual reasoning capabilities with two primary experimental settings: mu
+
+Source 6: llava.pdf, page 7, score=0.5929056268879419
+models. We report relative scores w.r.t. the text-only GPT-4 model that uses the textural ground truth description as visual input. We create two benchmarks to evaluate the model’s performance.   LLaVA-Bench (COCO). We randomly select 30 images from COCO-Val-2014, and for each image, we generate three types of questions (conversation, detailed description, complex reasoning) using the proposed data generation pipeline in Sec. 3, totaling 90 questions. This benchmark studies the model’s alignment",4,4,answer_incomplete + mixed_sources_noise,召回更多 LLaVA 片段，但仍混入 InternVL；conversation/detailed description 解释较好，complex reasoning 仍未完整召回。
+Q4,在 Video-LLaVA 中，为什么作者认为 image features 和 video features 必须在 projection layer 之前对齐？请结合 unified visual representation 和 LanguageBind 解释。,video-llava.pdf,800,120,6,388,video-llava.pdf; video-llava.pdf; video-llava.pdf; video-llava.pdf; video-llava.pdf; video-llava.pdf,4; 9; 9; 3; 5; 5,"根据检索到的论文片段，作者认为 image features 和 video features 必须在 projection layer 之前对齐，核心原因是为了解决“投影前的不对齐问题”（the issue of misalignment before projection），并构建一个统一的视觉表示（unified visual representation），从而让大语言模型（LLM）能够更好地同时理解图像和视频。
+
+具体解释如下：
+
+1. **利用 LanguageBind 预先对齐到语言特征空间**  
+   片段指出，Video-LLaVA 的视频编码器和图像编码器均从 LanguageBind 编码器库中初始化。LanguageBind 的作用是将不同的视觉信号“预先绑定”（pre-bind）到语言特征空间中。通过共享一个语言特征空间，图像和视频的表示最终会汇聚成一个统一的视觉特征空间，作者称之为“图像和视频的涌现对齐”（emergent alignment of images and videos）。这种在编码器阶段就完成的对齐，能够“预先对齐 LLM 的输入，并减少不同视觉信号表示之间的差距”。
+
+2. **形成统一的视觉表示后再送入共享投影层**  
+   在 LanguageBind 编码器完成对齐后，得到的统一视觉表示会经过一个共享的投影层（shared projection layer），然后才送入 LLM。如果不在投影层之前对齐，不同模态的视觉特征在进入投影层时可能存在较大的分布差异，这会增加 LLM 理解多模态输入的难度。而预先对齐使得投影层只需处理一个已经统一的特征空间，有助于 LLM 从统一的视觉表示中学习多模态交互。
+
+3. **支撑联合训练与相互促进**  
+   片段还表明，这种设计使得联合训练图像和视频成为可能，并且实验证明联合训练能够相互提升性能。作者在结论中强调，验证了“在投影之前对齐视觉表示有助于 LLM 学习”，并且 LLM 在从统一的视觉表示学习后，展现出了同时处理图像和视频的卓越能力。
+
+综上，作者认为必须在 projection layer 之前对齐，是因为通过 LanguageBind 将图像和视频特征预先绑定到语言特征空间，可以形成统一的视觉表示，消除不同视觉信号之间的差距，从而让 LLM 更有效地理解多模态输入，这是 Video-LLaVA 框架解决“投影前不对齐”问题的关键设计。","Source 1: video-llava.pdf, page 4, score=0.6183131969010138
+By shar-   visual comprehension tasks, rather than just de- ing a language feature space, the image and video    scribing visual signals. Note that the conversation representations ultimately converge into a unified    data X1q, X1a, · · · , XNq , XNa   consists of multiple visual feature space, which we refer to as emergent    rounds. alignment of images and videos. Therefore, our video encoder and image encoder are initialized          X1q,                      r = 1                           
+
+Source 2: video-llava.pdf, page 9, score=0.6133155959227488
+pare with Video-LLaVA∗to assess the performance   while preserving data features. This would support gains from joint image training on video bench-   Video-LLaVA in better understanding long videos. marks.  In Table 6, we evaluate our model on    Besides, Video-LLaVA can serve as a baseline to four video question-answering datasets.  Com-   extend to additional visual-related modalities, such pared to Video-LLaVA∗without image in training,   as depth and infrared images.  Additionally, we the m
+
+Source 3: video-llava.pdf, page 9, score=0.6096798946643831
+As a uni-                                                           fied visual training framework, the performance of 5  Limitation and Future Directions                                            Video-LLaVA even surpasses that of expert models 5.1  Limitation                                 designed specifically for images or videos.  While Video-LLaVA exhibits strong competitive-  Acknowledgments ness in both images and videos, we still observed                                               
+
+Source 4: video-llava.pdf, page 3, score=0.5930423121087587
+Table 1: Comparison between different Large Vision-Language Models. For methods that treat LLMs as scheduler, they do not require pre-alignment and joint training.         Methods                      Image  Video  Pre-aligned  Joint training        LLMs as scheduler        VisualChatGPT (Wu et al., 2023)    ✔     ✗             -                  -       HuggingGPT (Shen et al., 2023)    ✔     ✗             -                  -      MM-REACT (Yang et al., 2023)    ✔   ✔            -             
+
+Source 5: video-llava.pdf, page 5, score=0.5893559809926459
+Yes, the image and the video are depicting the same place. The video shows                                                                   Image                          Video  the statue of liberty from different angles, while the image shows a close-up   of the statue. Both the video and the image capture the beauty and grandeur    of the statue of liberty.                Large Language Model   𝑓𝑓𝐋𝐋                                    Vicuna v1.5  V  V  V  V  V  V  V     T   T   T   T   T    
+
+Source 6: video-llava.pdf, page 5, score=0.5859482603851834
+In the second stage, we re- 2018) and filtered by LLaVA (Liu et al., 2023b).                                                duce the batch size to 128. The initial learning rate The video-text pairs are derived from a subset pro-                                                        for both stages is set to 1e-3, with a warmup ratio vided by Valley (Luo et al., 2023), and we have                                                    of 0.03. Additional hyper-parameter settings can access to 702k ",5,5,none,Video-LLaVA 来源充分，回答比 top_k=2/4 更完整，补充了联合训练和统一表示的意义。
+Q5,Qwen2.5-VL 的动态分辨率、动态 FPS 和绝对时间编码分别解决了什么问题？,qwen2.5-VL.pdf,800,120,6,388,qwen2.5-VL.pdf; qwen2.5-VL.pdf; qwen2.5-VL.pdf; qwen2.5-VL.pdf; qwen2.5-VL.pdf; qwen2.5-VL.pdf,7; 5; 3; 1; 12; 2,"根据检索到的论文片段，Qwen2.5-VL 的动态分辨率、动态 FPS 和绝对时间编码分别解决了以下问题：
+
+- **动态分辨率**：解决传统方法需要归一化坐标、无法原生感知空间尺度的问题。它允许模型直接使用输入图像的实际尺寸来表示边界框、点等空间特征，使模型能够内在地学习尺度信息，从而更好地处理不同分辨率的图像，增强对多样化空间输入的适应能力。
+
+- **动态 FPS**：解决视频帧率变化带来的理解鲁棒性不足的问题。通过在训练中动态采样 FPS，使训练数据中的帧率分布更均匀，模型能够适应可变的帧率，从而更有效地捕捉视频内容的时间动态，实现跨不同采样率的全面视频理解。
+
+- **绝对时间编码**：解决此前 Qwen2-VL 中时间位置 ID 仅与输入帧数挂钩、无法反映内容变化速度和事件绝对时间的问题。通过将 MRoPE 的时间分量与绝对时间对齐，模型能够利用时间 ID 之间的间隔来学习时间节奏，实现跨不同 FPS 采样率的一致时间对齐，从而更精确地理解事件节奏和进行秒级事件定位，且无需额外计算开销。","Source 1: qwen2.5-VL.pdf, page 7, score=0.5213299953520111
+Video Data  To ensure enhanced robustness in understanding video data with varying frames per second (FPS), we dynamically sampled FPS during training to achieve a more evenly distributed representation of FPS within the training dataset. Additionally, for videos exceeding half an hour in length, we specifically constructed a set of long video captions by synthesizing multi-frame captions through a targeted synthesis pipeline. Regarding video grounding data, we formulated timestamps in both seco
+
+Source 2: qwen2.5-VL.pdf, page 5, score=0.5204961707966581
+training. Images are randomly sampled according to their original aspect ratios, enabling the model to generalize effectively to inputs of diverse resolutions. This approach not only improves the model’s adaptability but also ensures stable and efficient training across different sizes of visual data.  2.1.2  Native Dynamic Resolution and Frame Rate  Qwen2.5-VL introduces advancements in both spatial and temporal dimensions to handle diverse multimodal inputs effectively.  In the spatial domain,
+
+Source 3: qwen2.5-VL.pdf, page 3, score=0.5157742738697106
+Figure 1: The Qwen2.5-VL framework demonstrates the integration of a vision encoder and a language model decoder to process multimodal inputs, including images and videos. The vision encoder is designed to handle inputs at their native resolution and supports dynamic FPS sampling. Images of varying sizes and video frames with different FPS rates are dynamically mapped to token sequences of varying lengths. Notably, MRoPE aligns time IDs with absolute time along the temporal dimension, enabling t
+
+Source 4: qwen2.5-VL.pdf, page 1, score=0.501811188373714
+March 5, 2025                          Qwen2.5-VL Technical Report                                   Qwen Team, Alibaba Group                                           https://chat.qwenlm.ai                                          https://huggingface.co/Qwen                                          https://modelscope.cn/organization/qwen                                          https://github.com/QwenLM/Qwen2.5-VL                                                Abstract                We introdu
+
+Source 5: qwen2.5-VL.pdf, page 12, score=0.4910942769709075
+Similarly, on the MMStar dataset, Qwen2.5-VL attains a score of 70.8%, outperforming other leading models in this benchmark. These results underscore the model’s robustness and adaptability across diverse linguistic contexts.  Furthermore, in high-resolution real-world scenarios, specifically on the MME-RealWorld benchmark, Qwen2.5-VL demonstrates state-of-the-art performance with a score of 63.2, showcasing its broad adapt- ability to realistic environments. Additionally, in multi-image underst
+
+Source 6: qwen2.5-VL.pdf, page 2, score=0.48880059901728484
+The efforts proposed in (Guo et al., 2024; Chen et al., 2024d; Liu et al., 2024a; Chen et al., 2024a; Tong et al., 2024; Li et al., 2024a) are highly valuable contributions to this endeavor.  However, despite their remarkable progress, vision-language models currently face developmental bottlenecks, including computational complexity, limited contextual understanding, poor fine-grained visual perception, and inconsistent performance across varied sequence length.  In this report, we introduce th",5,5,none,Qwen2.5-VL 来源充分，回答完整且忠实。
+Q6,InternVL3.5 的 DvD（Decoupled Vision-Language Deployment）是什么？它如何把 vision encoder 和 language model 部署到不同 GPU 上来提升推理效率？,internvl.pdf,800,120,6,388,internvl.pdf; CLIP.pdf; internvl.pdf; qwen2.5-VL.pdf; CLIP.pdf; qwen2.5-VL.pdf,4; 5; 7; 4; 5; 4,"根据检索到的论文片段，InternVL3.5 的 DvD（Decoupled Vision-Language Deployment）是一种将视觉处理和语言处理分离的部署方案，其核心原理和提升推理效率的方式如下：
+
+**DvD 的定义与动机**
+在 InternVL3.5 的论文片段中明确指出，在多模态推理时，视觉编码器（Vision Encoder）和语言模型（Language Model）具有截然不同的计算特性。视觉编码器将图像转化为语义特征，高度可并行化且不依赖长期历史状态；而语言模型以自回归方式推理，需要前序状态来计算下一个状态，对内存带宽和延迟更敏感。当两者部署在一起时，往往会相互阻塞，导致额外的推理成本。
+
+**分离部署的方式**
+为了解决上述问题，DvD 方案将视觉和语言处理分离，特别关注优化预填充（prefilling）阶段。具体部署方式为：
+- **视觉子系统**：批量处理图像，生成紧凑的特征嵌入。在系统实现上，ViT 和 MLP（以及 InternVL3.5-Flash 中的 ViR）被部署在**视觉服务器（vision server）**上。
+- **语言子系统**：接收视觉子系统传来的特征嵌入，将其与文本上下文融合后进行解码。语言模型被部署在**语言服务器（language server）**上。
+
+**提升效率的原理**
+这种分离部署减轻了视觉和语言模型之间的相互阻塞，使得多模态预填充的性能更接近纯语言模型的性能。
+
+**关于“部署到不同 GPU”的说明**
+根据当前检索到的论文片段，文中仅提及将视觉模型和语言模型分别部署在“视觉服务器”和“语言服务器”上，**无法确定**这是否特指部署到不同的物理 GPU 上。","Source 1: internvl.pdf, page 4, score=0.6270043568691966
+#Param     Model                    Vision Encoder   Language Model                                                                      Vision   Language            Total                                             Dense Models       InternVL3.5-1B           InternViT-300M   Qwen3-0.6B           0.3B        0.8B            1.1B      InternVL3.5-2B           InternViT-300M   Qwen3-1.7B           0.3B        2.0B            2.3B      InternVL3.5-4B           InternViT-300M  Qwen3-4B            0.
+
+Source 2: CLIP.pdf, page 5, score=0.6225508645773381
+We denote this is left as future work.                                           this model as ViT-L/14@336px. Unless otherwise speciﬁed,                                                                            all results reported in this paper as “CLIP” use this model While previous computer vision research has often scaled                                                    which we found to perform best. models by increasing the width (Mahajan et al., 2018) or depth (He et al., 2016a) in is
+
+Source 3: internvl.pdf, page 7, score=0.6002821914208412
+2.5  Infrastructure  Training Framework. The model training is conducted mainly based on the XTuner framework [21], which incorporates a series of optimization strategies tailored for LLM and MoE training. These include fully shared data parallelism (FSDP) [182] to partition model parameters across GPUs, data packing [13] to reduce padding tokens while balancing the token computation load across ranks for improved training efficiency, FP8 training based on DeepGEMM [68] and liger-kernel’s fused 
+
+Source 4: qwen2.5-VL.pdf, page 4, score=0.5972981734155635
+2.1.1  Fast and Efficient Vision Encoder  The vision encoder plays a pivotal role in multimodal large language models (MLLMs). To address the challenges posed by computational load imbalances during training and inference due to native resolution inputs, we have redesigned the Vision Transformer (ViT) architecture. A key issue arises from the quadratic computational complexity associated with processing images of varying sizes. To mitigate this, we introduce windowed attention in most layers, wh
+
+Source 5: CLIP.pdf, page 5, score=0.5876097596491962
+Learning Transferable Visual Models From Natural Language Supervision                                       5  # image_encoder - ResNet or Vision Transformer                                                    one dimension of the model. While Tan & Le (2019) tune # text_encoder  - CBOW or Text Transformer # I[n, h, w, c] - minibatch of aligned images           the ratio of compute allocated to each dimension for their # T[n, l]       - minibatch of aligned texts           EfﬁcientNet architectur
+
+Source 6: qwen2.5-VL.pdf, page 4, score=0.583825110495622
+features extracted by the Vision Transformer (ViT), we first group spatially adjacent sets of four patch features. These grouped features are then concatenated and passed through a two-layer multi-layer perceptron (MLP) to project them into a dimension that aligns with the text embeddings used in the LLM. This method not only reduces computational costs but also provides a flexible way to dynamically compress image feature sequences of varying lengths.  In Table 1, the architecture and configura",4,5,mixed_sources_noise,答案对 DvD 的定义、vision server/language server、prefilling 阶段解释较好；混入无关论文但没有明显污染答案，并且对 GPU 细节保持拒答。
+Q1,ViT 为什么可以把图像当成词序列来处理？请结合 patch embedding、position embedding、class token 和 Transformer Encoder 解释。,VIT.pdf,800,120,8,388,VIT.pdf; VIT.pdf; VIT.pdf; VIT.pdf; VIT.pdf; VIT.pdf; video-llava.pdf; VIT.pdf,3; 9; 4; 2; 4; 1; 4; 7,"ViT 把图像当成词序列来处理，核心在于将图像切分成固定大小的块（patch），每个块看作一个“词”，再通过嵌入和位置编码转换为 Transformer 能接受的 1D 序列。具体过程如下：
+
+- **Patch Embedding**：标准 Transformer 的输入是 1D 的 token 嵌入序列。为了处理 2D 图像，ViT 将图像 \(x \in \mathbb{R}^{H \times W \times C}\) 切分成若干个大小为 \(P \times P\) 的块，展平后得到序列 \(x_p \in \mathbb{R}^{N \times (P^2 \cdot C)}\)，其中 \(N = HW/P^2\) 就是 patch 的数量，也即输入序列的有效长度。随后通过一个可训练的线性投影将每个展平的 patch 映射到 \(D\) 维向量，得到 patch embedding。这一步相当于把每个图像块转换成一个“词向量”。
+
+- **Class Token**：类似于 BERT 的 [class] token，ViT 在 patch embedding 序列的最前面添加一个可学习的嵌入（\(z_0^0 = x_{\text{class}}\)）。这个 class token 本身不携带图像内容信息，但经过 Transformer 编码器处理后，其输出状态 \(z_L^0\) 会被用作整个图像的表示，并接上分类头进行分类。这样，整个序列就包含了用于最终决策的特殊“词”。
+
+- **Position Embedding**：由于 Transformer 本身不具备序列顺序的感知能力，ViT 为每个位置添加可学习的 1D 位置嵌入，与 patch embedding 相加，以保留 patch 之间的位置信息。论文指出，初始化时这些位置嵌入并不携带 2D 空间先验，所有空间关系都需要从数据中学习。
+
+- **Transformer Encoder**：由 patch embedding、class token 和 position embedding 构成的向量序列被送入标准的 Transformer 编码器，其中包含交替的多头自注意力（MSA）和 MLP 块，并应用层归一化和残差连接。自注意力是全局的，使得模型能够像处理词序列一样，在整个图像 patch 序列上建模依赖关系。
+
+综上，ViT 通过“切块 → 线性投影（patch embedding）→ 加位置编码 → 前置 class token”将图像转化为一个向量序列，从而可以像处理 NLP 中的词序列一样，直接送入 Transformer 编码器进行学习。","Source 1: VIT.pdf, page 3, score=0.6129627552386296
+Published as a conference paper at ICLR 2021                                 Vision Transformer (ViT)                          Transformer Encoder                  Class                                                                              L x   +                    Bird     MLP                       Ball                     Car        Head                                       MLP                                     ...                                                                     
+
+Source 2: VIT.pdf, page 9, score=0.5948460680229734
+Published as a conference paper at ICLR 2021               RGB embedding filters           (first 28 principal components)                                                              Position embedding similarity                          ViT-L/16                                                                                         1                                                         1                                                                                                         
+
+Source 3: VIT.pdf, page 4, score=0.5885293358173604
+Published as a conference paper at ICLR 2021      The MLP contains two layers with a GELU non-linearity.      z0 = [xclass; x1pE; x2pE; · · · ; xNp E] + Epos,   E ∈R(P 2·C)×D, Epos ∈R(N+1)×D     (1)      z′ ℓ= MSA(LN(zℓ−1)) + zℓ−1,          ℓ= 1 . . . L                                (2)    zℓ= MLP(LN(z′ ℓ)) + z′ ℓ,            ℓ= 1 . . . L                                (3)     y = LN(z0L)                                                                                (4)  Inductive bias.  We not
+
+Source 4: VIT.pdf, page 2, score=0.5879727499385975
+This model is very similar to ViT, but our work goes further to demonstrate that large scale pre-training makes vanilla transformers competitive with (or even better than) state-of-the-art CNNs. Moreover, Cordonnier et al. (2020) use a small patch size of 2 × 2 pixels, which makes the model applicable only to small-resolution images, while we handle medium-resolution images as well.  There has also been a lot of interest in combining convolutional neural networks (CNNs) with forms of self-attent
+
+Source 5: VIT.pdf, page 4, score=0.584582476120255
+We therefore perform 2D interpolation of the pre-trained position embeddings, according to their location in the original image. Note that this resolution adjustment and patch extraction are the only points at which an inductive bias about the 2D structure of the images is manually injected into the Vision Transformer.  4  EXPERIMENTS  We evaluate the representation learning capabilities of ResNet, Vision Transformer (ViT), and the hybrid. To understand the data requirements of each model, we pr
+
+Source 6: VIT.pdf, page 1, score=0.5781963316156045
+Published as a conference paper at ICLR 2021           AN IMAGE IS WORTH 16X16 WORDS:           TRANSFORMERS FOR IMAGE RECOGNITION AT SCALE                              Alexey Dosovitskiy∗,†, Lucas Beyer∗, Alexander Kolesnikov∗, Dirk Weissenborn∗,                            Xiaohua Zhai∗, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer,                                 Georg Heigold, Sylvain Gelly, Jakob Uszkoreit, Neil Houlsby∗,†                                                 ∗equal tec
+
+Source 7: video-llava.pdf, page 4, score=0.5780417689090552
+ages or videos), a large language model fL such    into a sequence of tokens according to Equation 1. as Vicuna, visual projection layers fP and a word   By maximizing the likelihood probability in Equa- embedding layer fT. We initially obtain visual    tion 2, the model ultimately achieves multi-modal features using LanguageBind encoders. Language-   understanding capabilities. Bind encoders are capable of mapping different modalities into the textual feature space, thereby providing us with a 
+
+Source 8: VIT.pdf, page 7, score=0.5770465087990683
+region spanned by BiT models of different sizes. The BiT CNNs outperform ViT on ImageNet, but with the larger datasets, ViT overtakes.  Second, we train our models on random subsets of 9M, 30M, and 90M as well as the full JFT- 300M dataset. We do not perform additional regularization on the smaller subsets and use the same hyper-parameters for all settings. This way, we assess the intrinsic model properties, and not the effect of regularization. We do, however, use early-stopping, and report the",5,5,mixed_sources_noise,top_k=8 混入 video-llava.pdf，但回答仍主要基于 VIT.pdf，未明显受干扰。
+Q2,CLIP 的 contrastive pre-training objective 是什么？请解释 image-text pairs、cosine similarity 和 symmetric cross entropy loss 的作用。,CLIP.pdf,800,120,8,388,CLIP.pdf; CLIP.pdf; CLIP.pdf; CLIP.pdf; CLIP.pdf; CLIP.pdf; VIT.pdf; CLIP.pdf,44; 4; 4; 1; 5; 2; 9; 2,"根据检索到的 CLIP 论文片段，其对比预训练目标（contrastive pre-training objective）如下：
+
+给定一个包含 N 个（图像，文本）对的批次，CLIP 被训练来预测在该批次中所有 N × N 种可能的（图像，文本）配对里，哪些是真实发生的配对。为此，CLIP 联合训练一个图像编码器和一个文本编码器，学习一个多模态嵌入空间，目标是**最大化** N 个真实配对的图像嵌入与文本嵌入之间的**余弦相似度**，同时**最小化**其余 N²−N 个错误配对的嵌入之间的余弦相似度。在这些相似度分数上，优化一个**对称交叉熵损失**。
+
+各组成部分的作用：
+- **image-text pairs**：训练数据由成对的图像和文本组成，模型需要从一批混合配对中识别出正确的对应关系，这是对比学习的基础监督信号。
+- **cosine similarity**：用于度量图像嵌入和文本嵌入在联合多模态空间中的对齐程度。通过让真实配对的相似度尽可能高、错误配对的相似度尽可能低，驱动模型学习将匹配的图像和文本映射到相近的位置。
+- **symmetric cross entropy loss**：分别计算图像到文本方向与文本到图像方向的交叉熵损失，并将两者取平均。这种对称设计使得模型能够双向地拉近匹配对、推开不匹配对，从而学习到更鲁棒的跨模态表示。","Source 1: CLIP.pdf, page 44, score=0.60354912809709
+This mirrors recent work which reportedtask. We trained the model with a total batch size of 1,712                                                                 positive results using the same contrastive pre-training ob-for approximately 30 million images sampled from our pre- training dataset. At the end of training it achieves nearly     jective on the relatively different domain of medical imaging                                                       (Zhang et al., 2020). It also is simila
+
+Source 2: CLIP.pdf, page 4, score=0.5850901773478039
+(2020b). encoder, learns to recognize ImageNet classes three times                                        We instead use only a linear projection to map from each en- slower than a much simpler baseline that predicts a bag-of-                                                              coder’s representation to the multi-modal embedding space. words encoding of the same text.                                        We did not notice a difference in training efﬁciency between Both these approache
+
+Source 3: CLIP.pdf, page 4, score=0.5845140356951546
+Learning Transferable Visual Models From Natural Language Supervision                                       4  balance the results by including up to 20,000 (image, text)    multi-modal embedding space by jointly training an image pairs per query. The resulting dataset has a similar total    encoder and text encoder to maximize the cosine similar- word count as the WebText dataset used to train GPT-2. We     ity of the image and text embeddings of the N real pairs refer to this dataset as WIT fo
+
+Source 4: CLIP.pdf, page 1, score=0.5815456779993735
+content based image retrieval by training a model to pre-             The model transfers non-trivially to most tasks                                                                                 dict the nouns and adjectives in text documents paired with              and is often competitive with a fully supervised                                                                   images. Quattoni et al. (2007) demonstrated it was possi-                baseline without the need for any dataset
+
+Source 5: CLIP.pdf, page 5, score=0.5733443218248396
+Learning Transferable Visual Models From Natural Language Supervision                                       5  # image_encoder - ResNet or Vision Transformer                                                    one dimension of the model. While Tan & Le (2019) tune # text_encoder  - CBOW or Text Transformer # I[n, h, w, c] - minibatch of aligned images           the ratio of compute allocated to each dimension for their # T[n, l]       - minibatch of aligned texts           EfﬁcientNet architectur
+
+Source 6: CLIP.pdf, page 2, score=0.5727019584870165
+age representations from text.                                    A crucial difference between these weakly supervised mod- While exciting as proofs of concept, using natural language     els and recent explorations of learning image representations supervision for image representation learning is still rare.    directly from natural language is scale. While Mahajan et al. This is likely because demonstrated performance on com-    (2018) and Kolesnikov et al. (2019) trained their models for mon 
+
+Source 7: VIT.pdf, page 9, score=0.5726151501411871
+et al., 2019; Radford et al., 2018). We also perform a preliminary exploration on masked patch prediction for self-supervision, mimicking the masked language modeling task used in BERT. With self-supervised pre-training, our smaller ViT-B/16 model achieves 79.9% accuracy on ImageNet, a signiﬁcant improvement of 2% to training from scratch, but still 4% behind supervised pre-training. Appendix B.1.2 contains further details. We leave exploration of contrastive pre-training (Chen et al., 2020b; He
+
+Source 8: CLIP.pdf, page 2, score=0.567957248227676
+Learning Transferable Visual Models From Natural Language Supervision                                       2    (1) Contrastive pre-training                                                             (2) Create dataset classiﬁer from label text                                                                                  plane                                                                                  car    Pepper          the   Pepper          the                                 Text",5,5,mixed_sources_noise,top_k=8 混入 VIT.pdf，但回答仍准确基于 CLIP 论文。
+Q3,LLaVA 的 visual instruction tuning data 是如何由 GPT-4 生成的？请分别解释 conversation、detailed description 和 complex reasoning 三类数据。,llava.pdf,800,120,8,388,llava.pdf; llava.pdf; internvl.pdf; llava.pdf; llava.pdf; llava.pdf; llava.pdf; video-llava.pdf,3; 1; 7; 6; 5; 7; 20; 4,"根据检索到的 LLaVA 论文片段，其 visual instruction tuning data 的生成方式如下：
+
+**整体生成思路**  
+LLaVA 利用仅接受文本输入的语言模型 GPT-4（或 ChatGPT）作为“教师”，通过将图像编码为文本可识别的符号表示来生成多模态指令遵循数据。具体使用的符号表示有两类：  
+- **Captions**：从不同角度描述视觉场景；  
+- **Bounding boxes**：定位场景中的物体，每个框编码物体概念及其空间位置。  
+
+对于每一类数据，研究者首先手动设计少量示例，作为上下文学习（in-context-learning）的种子示例，然后以此提示 GPT-4 批量生成数据。
+
+**三类数据的具体生成方式**  
+1. **Conversation（对话）**  
+   设计一段助手与提问者之间的对话，提问者围绕照片的视觉内容提出多样化的问题（如物体类型、计数、动作、位置、相对位置等），助手以“仿佛正在看着图像并回答问题”的语气作答。只考虑具有明确答案的问题。  
+2. **Detailed description（详细描述）**  
+   为了获得丰富且全面的图像描述，先创建一系列具有此类意图的问题，然后提示 GPT-4 并整理生成的问题列表（具体提示细节见附录）。  
+3. **Complex reasoning（复杂推理）**  
+   根据当前检索到的论文片段，**无法确定**该类数据的具体生成方法。片段中仅提及在 LLaVA-Bench (COCO) 中使用了 conversation、detailed description 和 complex reasoning 三类问题，但未给出 complex reasoning 数据的生成过程描述。","Source 1: llava.pdf, page 3, score=0.6094362751172385
+Table 1: One example to illustrate the instruction-following data. The top block shows the contexts such as captions and boxes used to prompt GPT, and the bottom block shows the three types of responses. Note that the visual image is not used to prompt GPT, we only show it here as a reference.   following data, the available amount is limited, partially because the process for creating such data is time-consuming and less well-defined when human crowd-scouring is considered. Inspired by the succ
+
+Source 2: llava.pdf, page 1, score=0.6047659928931697
+Visual Instruction Tuning                                      Haotian Liu1∗, Chunyuan Li2∗, Qingyang Wu3, Yong Jae Lee1                               1University of Wisconsin–Madison   2Microsoft Research   3Columbia University                                                                    https://llava-vl.github.io                                                    Abstract2023                                  Instruction tuning large language models (LLMs) using machine-generated         
+
+Source 3: internvl.pdf, page 7, score=0.5986747961042415
+Data. For the supervised fine-tuning (SFT) stage, the datasets comprise approximately 56 million samples, which corresponds to around 130 billion tokens. The proportion of text-only data to multimodal data is roughly 1:3.5. For the cascade reinforcement learning stage, we use MMPR-v1.2 [142] as the training data for offline RL, which contains about 200K sample pairs. Based on MMPR-v1.2, we compute the accuracy of each query using the provided rollouts and select those whose model accuracy falls 
+
+Source 4: llava.pdf, page 6, score=0.5974663081371353
+Surprisingly, although LLaVA is trained with a small multimodal instruction-following dataset (∼80K unique images), it demonstrates quite similar reasoning results with multimodal GPT-4 on these examples. Note that while these images are out-of-domain for LLaVA, LLaVA is still able to understand the scenes and follow the question instruction to provide a reasonable response. In contrast, BLIP-2 and OpenFlamingo focus on describing the image, instead of following the user instruction to answer in
+
+Source 5: llava.pdf, page 5, score=0.595058309651289
+Each question is provided a context in the form of natural language or an image.     The assistant provides the reasoning process in natural language and selects the answer among      multiple choices. For training in (2), we organize the data as a single turn conversation, the      question & context as Xinstruct, and reasoning & answer as Xa.  5  Experiments  We assess the performance of LLaVA in instruction-following and visual reasoning capabilities with two primary experimental settings: mu
+
+Source 6: llava.pdf, page 7, score=0.5929056268879419
+models. We report relative scores w.r.t. the text-only GPT-4 model that uses the textural ground truth description as visual input. We create two benchmarks to evaluate the model’s performance.   LLaVA-Bench (COCO). We randomly select 30 images from COCO-Val-2014, and for each image, we generate three types of questions (conversation, detailed description, complex reasoning) using the proposed data generation pipeline in Sec. 3, totaling 90 questions. This benchmark studies the model’s alignment
+
+Source 7: llava.pdf, page 20, score=0.592856318981153
+C  Training Details  We pre-train our model on the filtered CC-595K subset for 1 epoch with a learning rate of 2e-3 and a batch size of 128, and fine-tune on the proposed LLaVA-Instruct-158K dataset for 3 epochs, with a learning rate of 2e-5 and a batch size of 32. Following Vicuna, we use the Adam optimizer with no weight decay and a cosine learning rate with a warmup ratio of 3%. During finetuning, FSDP (Full Shard Data Parallel) and gradient checkpointing is used to save GPU memory, and offlo
+
+Source 8: video-llava.pdf, page 4, score=0.5886214407008444
+By shar-   visual comprehension tasks, rather than just de- ing a language feature space, the image and video    scribing visual signals. Note that the conversation representations ultimately converge into a unified    data X1q, X1a, · · · , XNq , XNa   consists of multiple visual feature space, which we refer to as emergent    rounds. alignment of images and videos. Therefore, our video encoder and image encoder are initialized          X1q,                      r = 1                           ",4,4,answer_incomplete + mixed_sources_noise,召回更多 LLaVA 片段，但仍混入 InternVL/Video-LLaVA；整体生成方法清楚，complex reasoning 仍缺少具体生成过程。
+Q4,在 Video-LLaVA 中，为什么作者认为 image features 和 video features 必须在 projection layer 之前对齐？请结合 unified visual representation 和 LanguageBind 解释。,video-llava.pdf,800,120,8,388,video-llava.pdf; video-llava.pdf; video-llava.pdf; video-llava.pdf; video-llava.pdf; video-llava.pdf; video-llava.pdf; video-llava.pdf,4; 9; 9; 3; 5; 5; 7; 1,"根据检索到的论文片段，作者认为 image features 和 video features 必须在 projection layer 之前对齐，核心原因在于：**如果图像和视频在投影前缺乏统一的 tokenization（即“投影前未对齐”），大语言模型（LLM）将难以从多个质量不佳的投影层中学习多模态交互**（见 page 1 摘要）。  
+
+具体而言，Video-LLaVA 通过 **LanguageBind** 编码器将图像和视频的表示预先绑定到**共享的语言特征空间**中，使它们最终收敛为一个**统一的视觉特征空间**（即“emergent alignment”）。这种“投影前对齐”的做法，能够**减少不同视觉信号表示之间的差距**，让 LLM 在接收到经过共享投影层的统一视觉表示后，可以更有效地同时理解图像和视频（见 page 4）。简言之，LanguageBind 提供的预对齐能力，为 LLM 学习统一的视觉概念奠定了基础，避免了因分离的视觉特征空间导致的交互学习困难。","Source 1: video-llava.pdf, page 4, score=0.6183131969010138
+By shar-   visual comprehension tasks, rather than just de- ing a language feature space, the image and video    scribing visual signals. Note that the conversation representations ultimately converge into a unified    data X1q, X1a, · · · , XNq , XNa   consists of multiple visual feature space, which we refer to as emergent    rounds. alignment of images and videos. Therefore, our video encoder and image encoder are initialized          X1q,                      r = 1                           
+
+Source 2: video-llava.pdf, page 9, score=0.6133155959227488
+pare with Video-LLaVA∗to assess the performance   while preserving data features. This would support gains from joint image training on video bench-   Video-LLaVA in better understanding long videos. marks.  In Table 6, we evaluate our model on    Besides, Video-LLaVA can serve as a baseline to four video question-answering datasets.  Com-   extend to additional visual-related modalities, such pared to Video-LLaVA∗without image in training,   as depth and infrared images.  Additionally, we the m
+
+Source 3: video-llava.pdf, page 9, score=0.6096798946643831
+As a uni-                                                           fied visual training framework, the performance of 5  Limitation and Future Directions                                            Video-LLaVA even surpasses that of expert models 5.1  Limitation                                 designed specifically for images or videos.  While Video-LLaVA exhibits strong competitive-  Acknowledgments ness in both images and videos, we still observed                                               
+
+Source 4: video-llava.pdf, page 3, score=0.5930423121087587
+Table 1: Comparison between different Large Vision-Language Models. For methods that treat LLMs as scheduler, they do not require pre-alignment and joint training.         Methods                      Image  Video  Pre-aligned  Joint training        LLMs as scheduler        VisualChatGPT (Wu et al., 2023)    ✔     ✗             -                  -       HuggingGPT (Shen et al., 2023)    ✔     ✗             -                  -      MM-REACT (Yang et al., 2023)    ✔   ✔            -             
+
+Source 5: video-llava.pdf, page 5, score=0.5893559809926459
+Yes, the image and the video are depicting the same place. The video shows                                                                   Image                          Video  the statue of liberty from different angles, while the image shows a close-up   of the statue. Both the video and the image capture the beauty and grandeur    of the statue of liberty.                Large Language Model   𝑓𝑓𝐋𝐋                                    Vicuna v1.5  V  V  V  V  V  V  V     T   T   T   T   T    
+
+Source 6: video-llava.pdf, page 5, score=0.5859482603851834
+In the second stage, we re- 2018) and filtered by LLaVA (Liu et al., 2023b).                                                duce the batch size to 128. The initial learning rate The video-text pairs are derived from a subset pro-                                                        for both stages is set to 1e-3, with a warmup ratio vided by Valley (Luo et al., 2023), and we have                                                    of 0.03. Additional hyper-parameter settings can access to 702k 
+
+Source 7: video-llava.pdf, page 7, score=0.5851349351593866
+Furthermore, to ensure a   even surpasses Mini-GPT4 comprehensively. The fair comparison, we replace the image encoder in    successful performance of Video-LLaVA in object LLaVA-1.5 with the LanguageBind-Image encoder,   hallucination detection validates the consistency called LLaVA-1.5†. This demonstrates that the per-   between unified visual representations and the gen- formance improvement observed in Video-LLaVA    eration of textual descriptions. is not solely attributed to a stronger ima
+
+Source 8: video-llava.pdf, page 1, score=0.5837385969116697
+Video-LLaVA: Learning United Visual Representation by Alignment                                    Before Projection                                 Bin Lin1, Yang Ye1, Bin Zhu1, Jiaxi Cui4,                          Munang Ning1,2,3, Peng Jin1,2,3, Li Yuan1,2,3                       1Peking University Shenzhen Graduate School, 2Peng Cheng Laboratory,              3AI for Science (AI4S)-Preferred Program, Peking University Shenzhen Graduate School,                                             4Pan",5,5,none,Video-LLaVA 来源全部正确，回答最完整，明确提到摘要中的 misalignment before projection。
+Q5,Qwen2.5-VL 的动态分辨率、动态 FPS 和绝对时间编码分别解决了什么问题？,qwen2.5-VL.pdf,800,120,8,388,qwen2.5-VL.pdf; qwen2.5-VL.pdf; qwen2.5-VL.pdf; qwen2.5-VL.pdf; qwen2.5-VL.pdf; qwen2.5-VL.pdf; qwen2.5-VL.pdf; qwen2.5-VL.pdf,7; 5; 3; 1; 12; 2; 8; 14,"根据检索到的论文片段，Qwen2.5-VL 中的动态分辨率、动态 FPS 和绝对时间编码分别解决了以下问题：
+
+- **动态分辨率**：在空间维度上，解决了传统方法需要归一化坐标、无法直接利用图像原始尺寸信息的问题。它允许模型直接根据输入图像的实际尺寸动态生成不同长度的 token 序列，并直接使用真实尺寸表示边界框和空间特征，从而使模型能够内在地学习尺度信息，提升对不同分辨率图像的适应能力。
+
+- **动态 FPS**：在时间维度上，解决了视频帧率变化带来的理解鲁棒性问题。通过训练时动态采样帧率，使训练数据中的帧率分布更均匀，模型能够适应不同的帧率，从而更好地捕捉视频内容的时间动态。
+
+- **绝对时间编码**：解决了 Qwen2-VL 中 MRoPE 的时间位置 ID 仅与输入帧数挂钩、无法反映内容变化速度和事件绝对时间的问题。通过将 MRoPE 的时间分量与绝对时间对齐，模型能够利用时间 ID 之间的间隔来学习一致的时间对齐，从而在不同 FPS 采样率下理解时间节奏，并支持长达数小时的视频中秒级事件定位。","Source 1: qwen2.5-VL.pdf, page 7, score=0.5213299953520111
+Video Data  To ensure enhanced robustness in understanding video data with varying frames per second (FPS), we dynamically sampled FPS during training to achieve a more evenly distributed representation of FPS within the training dataset. Additionally, for videos exceeding half an hour in length, we specifically constructed a set of long video captions by synthesizing multi-frame captions through a targeted synthesis pipeline. Regarding video grounding data, we formulated timestamps in both seco
+
+Source 2: qwen2.5-VL.pdf, page 5, score=0.5204961707966581
+training. Images are randomly sampled according to their original aspect ratios, enabling the model to generalize effectively to inputs of diverse resolutions. This approach not only improves the model’s adaptability but also ensures stable and efficient training across different sizes of visual data.  2.1.2  Native Dynamic Resolution and Frame Rate  Qwen2.5-VL introduces advancements in both spatial and temporal dimensions to handle diverse multimodal inputs effectively.  In the spatial domain,
+
+Source 3: qwen2.5-VL.pdf, page 3, score=0.5157742738697106
+Figure 1: The Qwen2.5-VL framework demonstrates the integration of a vision encoder and a language model decoder to process multimodal inputs, including images and videos. The vision encoder is designed to handle inputs at their native resolution and supports dynamic FPS sampling. Images of varying sizes and video frames with different FPS rates are dynamically mapped to token sequences of varying lengths. Notably, MRoPE aligns time IDs with absolute time along the temporal dimension, enabling t
+
+Source 4: qwen2.5-VL.pdf, page 1, score=0.501811188373714
+March 5, 2025                          Qwen2.5-VL Technical Report                                   Qwen Team, Alibaba Group                                           https://chat.qwenlm.ai                                          https://huggingface.co/Qwen                                          https://modelscope.cn/organization/qwen                                          https://github.com/QwenLM/Qwen2.5-VL                                                Abstract                We introdu
+
+Source 5: qwen2.5-VL.pdf, page 12, score=0.4910942769709075
+Similarly, on the MMStar dataset, Qwen2.5-VL attains a score of 70.8%, outperforming other leading models in this benchmark. These results underscore the model’s robustness and adaptability across diverse linguistic contexts.  Furthermore, in high-resolution real-world scenarios, specifically on the MME-RealWorld benchmark, Qwen2.5-VL demonstrates state-of-the-art performance with a score of 63.2, showcasing its broad adapt- ability to realistic environments. Additionally, in multi-image underst
+
+Source 6: qwen2.5-VL.pdf, page 2, score=0.48880059901728484
+The efforts proposed in (Guo et al., 2024; Chen et al., 2024d; Liu et al., 2024a; Chen et al., 2024a; Tong et al., 2024; Li et al., 2024a) are highly valuable contributions to this endeavor.  However, despite their remarkable progress, vision-language models currently face developmental bottlenecks, including computational complexity, limited contextual understanding, poor fine-grained visual perception, and inconsistent performance across varied sequence length.  In this report, we introduce th
+
+Source 7: qwen2.5-VL.pdf, page 8, score=0.485529405469215
+reasoning process for each step through human and model annotators (Xu et al., 2024). Specifically, given a ground-truth operation, we highlight it on the screenshot. Then, we provide the global query, along with screenshots from before and after this operation, to the annotators and require them to write reasoning content to explain the intention behind this operation. A model-based filter is used to screen out low-quality reasoning content. Such reasoning content prevents Qwen2.5-VL from overf
+
+Source 8: qwen2.5-VL.pdf, page 14, score=0.4850175255636039
+Notably, on LVBench and MLVU, which evaluate long-form video understanding capabilities through question-answering tasks, Qwen2.5-VL-72B achieves remarkable results, significantly outperforming strong competitors such as GPT-4o.  By utilizing the proposed synchronized MRoPE, Qwen2.5-VL enhances its capabilities in time-sensitive video understanding, featuring improved timestamp referencing, temporal grounding, dense captioning, and additional functionalities. On the Charades-STA dataset, which a",5,5,none,Qwen2.5-VL 来源全部正确，回答完整，并补充长视频秒级事件定位。
+Q6,InternVL3.5 的 DvD（Decoupled Vision-Language Deployment）是什么？它如何把 vision encoder 和 language model 部署到不同 GPU 上来提升推理效率？,internvl.pdf,800,120,8,388,internvl.pdf; CLIP.pdf; internvl.pdf; qwen2.5-VL.pdf; CLIP.pdf; qwen2.5-VL.pdf; qwen2.5-VL.pdf; internvl.pdf,4; 5; 7; 4; 5; 4; 3; 3,"根据检索到的论文片段，InternVL3.5 的 DvD（Decoupled Vision-Language Deployment）是一种将视觉处理和语言处理分离的部署方法，旨在提升多模态模型的推理效率。
+
+其工作原理和效率提升方式如下：
+-   **分离部署**：在系统实现上，ViT（视觉编码器）和 MLP（以及 InternVL3.5-Flash 中的 ViR）被部署在**视觉服务器**上，而语言模型则部署在**语言服务器**上。
+-   **优化预填充阶段**：该方法特别关注优化预填充阶段。视觉子系统会批量处理图像，生成紧凑的特征嵌入，然后将这些嵌入传输给语言子系统，与文本上下文融合后再进行解码。
+-   **提升效率的原因**：这种分离减轻了视觉和语言模型在推理时相互阻塞的问题，使得多模态预填充的性能更接近纯语言模型。
+
+关于“如何把 vision encoder 和 language model 部署到不同 GPU 上”这一具体细节，根据当前检索到的论文片段无法确定。","Source 1: internvl.pdf, page 4, score=0.6270043568691966
+#Param     Model                    Vision Encoder   Language Model                                                                      Vision   Language            Total                                             Dense Models       InternVL3.5-1B           InternViT-300M   Qwen3-0.6B           0.3B        0.8B            1.1B      InternVL3.5-2B           InternViT-300M   Qwen3-1.7B           0.3B        2.0B            2.3B      InternVL3.5-4B           InternViT-300M  Qwen3-4B            0.
+
+Source 2: CLIP.pdf, page 5, score=0.6225508645773381
+We denote this is left as future work.                                           this model as ViT-L/14@336px. Unless otherwise speciﬁed,                                                                            all results reported in this paper as “CLIP” use this model While previous computer vision research has often scaled                                                    which we found to perform best. models by increasing the width (Mahajan et al., 2018) or depth (He et al., 2016a) in is
+
+Source 3: internvl.pdf, page 7, score=0.6002821914208412
+2.5  Infrastructure  Training Framework. The model training is conducted mainly based on the XTuner framework [21], which incorporates a series of optimization strategies tailored for LLM and MoE training. These include fully shared data parallelism (FSDP) [182] to partition model parameters across GPUs, data packing [13] to reduce padding tokens while balancing the token computation load across ranks for improved training efficiency, FP8 training based on DeepGEMM [68] and liger-kernel’s fused 
+
+Source 4: qwen2.5-VL.pdf, page 4, score=0.5972981734155635
+2.1.1  Fast and Efficient Vision Encoder  The vision encoder plays a pivotal role in multimodal large language models (MLLMs). To address the challenges posed by computational load imbalances during training and inference due to native resolution inputs, we have redesigned the Vision Transformer (ViT) architecture. A key issue arises from the quadratic computational complexity associated with processing images of varying sizes. To mitigate this, we introduce windowed attention in most layers, wh
+
+Source 5: CLIP.pdf, page 5, score=0.5876097596491962
+Learning Transferable Visual Models From Natural Language Supervision                                       5  # image_encoder - ResNet or Vision Transformer                                                    one dimension of the model. While Tan & Le (2019) tune # text_encoder  - CBOW or Text Transformer # I[n, h, w, c] - minibatch of aligned images           the ratio of compute allocated to each dimension for their # T[n, l]       - minibatch of aligned texts           EfﬁcientNet architectur
+
+Source 6: qwen2.5-VL.pdf, page 4, score=0.583825110495622
+features extracted by the Vision Transformer (ViT), we first group spatially adjacent sets of four patch features. These grouped features are then concatenated and passed through a two-layer multi-layer perceptron (MLP) to project them into a dimension that aligns with the text embeddings used in the LLM. This method not only reduces computational costs but also provides a flexible way to dynamically compress image feature sequences of varying lengths.  In Table 1, the architecture and configura
+
+Source 7: qwen2.5-VL.pdf, page 3, score=0.5803898501072629
+Figure 1: The Qwen2.5-VL framework demonstrates the integration of a vision encoder and a language model decoder to process multimodal inputs, including images and videos. The vision encoder is designed to handle inputs at their native resolution and supports dynamic FPS sampling. Images of varying sizes and video frames with different FPS rates are dynamically mapped to token sequences of varying lengths. Notably, MRoPE aligns time IDs with absolute time along the temporal dimension, enabling t
+
+Source 8: internvl.pdf, page 3, score=0.5788796821670257
+448×448 Tiles        Thumbnail                         Qwen3 / GPT-OSS                                MLP Projector                                                                                                                                                                                     Pixel Shuffle                                                                 Vision-Language Connector              Text Tokenizer                                                                         ",4,5,mixed_sources_noise,召回 InternVL DvD 相关内容，但混入 CLIP/Qwen；答案对 DvD 主体解释正确，并对 GPU 细节保持保守。
